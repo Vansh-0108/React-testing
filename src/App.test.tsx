@@ -1,7 +1,8 @@
 import React from 'react';
-import { getByRole, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, getByRole, render, screen, waitFor } from '@testing-library/react';
 import App from './App';
 import { getUser } from './get-user';
+import userEvent from '@testing-library/user-event';
 // import { mocked } from 'ts-jest/utils'
 
 jest.mock('./get-user');
@@ -61,6 +62,8 @@ describe.skip ("When everything is okay", () => {
   })
 })
 
+// findby... is used with async methods (with a await)
+
 describe ("When component fetches the user successfully", () => {
   beforeEach(() => {
     // jest.clearAllMocks();
@@ -77,7 +80,34 @@ describe ("When component fetches the user successfully", () => {
     await waitFor(() => expect(mockGetUser).toHaveBeenCalledTimes(1))
   })
 
-  it('should render the username passed', () => {
-    mockGetUser.mockImplementationOnce(() => Promise.resolve(someUser))
+  it('should render the username passed', async() => {
+    // mockGetUser.mockImplementationOnce(() => Promise.resolve(someUser))
+    // OR 
+    mockGetUser.mockResolvedValueOnce(someUser)
+    render(<App />)
+    expect(screen.queryByText(/Username/)).toBeNull()
+    // screen.debug()
+    expect(await screen.findByText(/Username/)).toBeInTheDocument()
+    // screen.debug()
+    expect(await screen.findByText(`Username: ${someUser.name}`)).toBeInTheDocument();
+  })
+})
+
+describe ("When user enters some text in the imput element", () => {
+  it("should display the text on the screen", async() => {
+    render(<App />);
+    await waitFor(() => expect(mockGetUser).toHaveBeenCalled());
+
+    expect(screen.getByText(/You typed: .../))
+
+    // fireEvent.change(screen.getByRole('textbox'), {
+    //   target: { value: 'someName' }
+    // });
+
+    // OR
+
+    userEvent.type(screen.getByRole('textbox'), 'someName')
+
+    expect(screen.getByText(/You typed: someName/))
   })
 })
